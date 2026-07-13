@@ -5,9 +5,12 @@ junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 appcompat = "1.7.1"
+localbroadcastmanager = "1.1.0"
 material = "1.14.0"
 activityKtx = "1.13.0"
 constraintlayout = "2.2.1"
+onnxruntimeAndroid = "latest.release"
+tokenizersAndroid = "latest.release"
 
 [libraries]
 easypermissions = { module = "pub.devrel:easypermissions", version.ref = "easypermissions" }
@@ -15,9 +18,12 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+localbroadcastmanager = { module = "androidx.localbroadcastmanager:localbroadcastmanager", version.ref = "localbroadcastmanager" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntimeAndroid" }
+tokenizers-android = { module = "com.github.huggingface:tokenizers-android", version.ref = "tokenizersAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

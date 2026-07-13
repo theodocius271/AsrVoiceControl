@@ -1,19 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+    android:id="@+id/main_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="4"
+        android:orientation="vertical"
+        android:id="@+id/upper_section"
+        android:gravity="center"
+        android:padding="16dp" >
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_use_input"
+            android:padding="16dp"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            android:textStyle="italic"
+            android:gravity="center"
+            android:background="@drawable/glass_background"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/tv_system_output"
+            android:padding="16dp"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            android:textStyle="italic"
+            android:gravity="center"
+            android:background="@drawable/glass_background"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:id="@+id/lower_section"
+        android:layout_weight="1"
+        android:layout_gravity="center" >
+
+        <ImageButton
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:id="@+id/btn_microphone"
+            android:layout_gravity="center"
+            android:background="@drawable/circular_button_background_paused"
+            android:src="@drawable/ic_microphone"
+            android:scaleType="centerInside"
+            android:contentDescription="@string/microphone_button" />
+
+    </FrameLayout>
+
+</LinearLayout>

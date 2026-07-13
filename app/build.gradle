@@ -53,4 +53,11 @@ dependencies {
     androidTestImplementation libs.ext.junit
 
     implementation libs.easypermissions
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+
+    implementation libs.onnxruntime.android
+    implementation 'ai.djl:api:0.33.0'
+    implementation 'ai.djl.huggingface:tokenizers:0.33.0'
+    // implementation "ai.djl.android:onnxruntime:0.33.0"
+    implementation "ai.djl.android:tokenizer-native:0.33.0"
 }

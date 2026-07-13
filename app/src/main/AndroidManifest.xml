@@ -28,6 +28,7 @@
 
         <service
             android:name=".service.AsrService"
+            android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="microphone" />
     </application>

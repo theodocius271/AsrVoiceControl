@@ -13,7 +13,8 @@ import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig;
 
 public class AsrManager {
     private static final String TAG = "ASR Manager";
-    private static final String MODEL_DIR = "zipformer-bilingual-20230220";
+    // private static final String MODEL_DIR = "zipformer-bilingual-20230220";
+    private static final String MODEL_DIR = "zipformer-en-20230217";
 
     private OnlineRecognizer recognizer;
     private OnlineStream stream;
@@ -53,8 +54,8 @@ public class AsrManager {
 
             // Endpoint configuration
             EndpointConfig endpointConfig = new EndpointConfig();
-            endpointConfig.setRule1(new EndpointRule(false, 2.4f, 0.0f)); // 2.4s trailing silence
-            endpointConfig.setRule2(new EndpointRule(true, 1.4f, 0.0f)); // 1.4s with speech
+            endpointConfig.setRule1(new EndpointRule(false, 3.2f, 0.0f)); // 2.4s trailing silence
+            endpointConfig.setRule2(new EndpointRule(true, 2.4f, 0.0f)); // 1.4s with speech
             endpointConfig.setRule3(new EndpointRule(false, 0.0f, 20.0f)); // max 20s utterance
             recognizerConfig.setEndpointConfig(endpointConfig);
 
