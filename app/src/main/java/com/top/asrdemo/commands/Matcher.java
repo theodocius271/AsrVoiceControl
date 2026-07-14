@@ -13,6 +13,8 @@ import com.top.asrdemo.service.AsrService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Matcher extends BroadcastReceiver {
     private static final String TAG = "Matcher";
@@ -26,7 +28,8 @@ public class Matcher extends BroadcastReceiver {
     private Map<String, float[]> commandEmbeddings;
     private Map<String, String> commandTexts; // logging debugging
 
-    private boolean isInitialized = false;
+    private volatile boolean isInitialized = false;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private Matcher() {
         embedder = new Embedder();
@@ -52,20 +55,17 @@ public class Matcher extends BroadcastReceiver {
 
         appContext = context.getApplicationContext();
 
-        // Initialize embedder
-        if (!embedder.initialize(context)) {
-            Log.e(TAG, "Failed to initialize embedder");
-            return false;
-        }
+        executor.execute(() -> {
+            if (!embedder.initialize(appContext)) {
+                Log.e(TAG, "Failed to initialize embedder");
+                return;
+            }
+            loadCommands();
+            registerReceiver();
+            isInitialized = true;
+            Log.i(TAG, "Matcher initialized with " + commandEmbeddings.size() + " commands");
+        });
 
-        // Pre-compute embeddings for all commands
-        loadCommands();
-
-        // Register broadcast receiver
-        registerReceiver();
-
-        isInitialized = true;
-        Log.i(TAG, "Matcher initialized with " + commandEmbeddings.size() + " commands");
         return true;
     }
 
@@ -117,7 +117,7 @@ public class Matcher extends BroadcastReceiver {
         if (AsrService.ACTION_FINAL_RESULT.equals(action)) {
             String text = intent.getStringExtra(AsrService.EXTRA_TEXT);
             if (text != null && !text.trim().isEmpty()) {
-                handleFinalResult(text);
+                executor.execute(() -> handleFinalResult(text));
             }
         }
     }

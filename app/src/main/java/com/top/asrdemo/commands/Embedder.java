@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import ai.djl.huggingface.tokenizers.Encoding;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OrtEnvironment;
@@ -49,7 +50,11 @@ public class Embedder {
                     os.write(buffer, 0, length);
                 }
             }
-            tokenizer =  HuggingFaceTokenizer.newInstance(Paths.get(tokenizerFile.getAbsolutePath()));
+            tokenizer = HuggingFaceTokenizer.builder()
+                    .optTokenizerPath(Paths.get(tokenizerFile.getAbsolutePath()))
+                    .optMaxLength(MAX_SEQ_LENGTH)
+                    .optTruncation(true)
+                    .build();
 
             // Complete
             isInitialized = true;
@@ -93,31 +98,63 @@ public class Embedder {
         }
 
         try {
-            long[] inputIds = tokenizer.encode(text).getIds();
-            // create input tensor
+            Encoding encoding = tokenizer.encode(text);
+            long[] inputIds = encoding.getIds();
+            long[] attentionMask = encoding.getAttentionMask();
+            long[] tokenTypeIds = encoding.getTypeIds();
+
+            if (inputIds.length != attentionMask.length || inputIds.length != tokenTypeIds.length) {
+                throw new IllegalStateException("Tokenizer returned inconsistent input lengths");
+            }
+
             long[] shape = {1, inputIds.length};
-            OnnxTensor inputTensor = OnnxTensor.createTensor(env,
-                    LongBuffer.wrap(inputIds), shape);
+            try (OnnxTensor inputIdsTensor = OnnxTensor.createTensor(
+                    env, LongBuffer.wrap(inputIds), shape);
+                 OnnxTensor attentionMaskTensor = OnnxTensor.createTensor(
+                         env, LongBuffer.wrap(attentionMask), shape);
+                 OnnxTensor tokenTypeIdsTensor = OnnxTensor.createTensor(
+                         env, LongBuffer.wrap(tokenTypeIds), shape)) {
+                Map<String, OnnxTensor> inputs = new HashMap<>();
+                inputs.put("input_ids", inputIdsTensor);
+                inputs.put("attention_mask", attentionMaskTensor);
+                inputs.put("token_type_ids", tokenTypeIdsTensor);
 
-            // predict
-            Map<String, OnnxTensor> inputs = new HashMap<>();
-            inputs.put("input_ids", inputTensor);
-            OrtSession.Result result = session.run(inputs);
-
-            // Extract embedding
-            float[][] embedding = (float[][]) result.get(0).getValue();
-            float[] vector = embedding[0]; // first token or pooled output
-
-            // normalize
-            float[] normalized = normalize(vector);
-
-            inputTensor.close();
-            result.close();
-            return normalized;
+                try (OrtSession.Result result = session.run(inputs)) {
+                    float[][][] lastHiddenState = (float[][][]) result.get(0).getValue();
+                    float[] vector = meanPool(lastHiddenState[0], attentionMask);
+                    return normalize(vector);
+                }
+            }
         } catch (Exception e) {
             Log.e(TAG, "Embed failed", e);
             return null;
         }
+    }
+
+    private float[] meanPool(float[][] tokenEmbeddings, long[] attentionMask) {
+        if (tokenEmbeddings.length != attentionMask.length || tokenEmbeddings.length == 0) {
+            throw new IllegalArgumentException("Invalid model output shape");
+        }
+
+        float[] pooled = new float[tokenEmbeddings[0].length];
+        long tokenCount = 0;
+        for (int token = 0; token < tokenEmbeddings.length; token++) {
+            if (attentionMask[token] == 0) {
+                continue;
+            }
+            tokenCount++;
+            for (int dimension = 0; dimension < pooled.length; dimension++) {
+                pooled[dimension] += tokenEmbeddings[token][dimension];
+            }
+        }
+
+        if (tokenCount == 0) {
+            throw new IllegalArgumentException("Cannot pool an empty token sequence");
+        }
+        for (int dimension = 0; dimension < pooled.length; dimension++) {
+            pooled[dimension] /= tokenCount;
+        }
+        return pooled;
     }
 
     private float[] normalize(float[] vector) {

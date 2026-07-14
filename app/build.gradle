@@ -41,6 +41,13 @@ android {
         }
     }
 
+    packaging {
+        jniLibs {
+            // sherpa-onnx is declared first and supplies the matching 1.24.3 runtime.
+            pickFirsts += ['lib/arm64-v8a/libonnxruntime.so']
+        }
+    }
+
 }
 
 dependencies {
@@ -54,6 +61,7 @@ dependencies {
 
     implementation libs.easypermissions
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+    implementation 'com.github.k2-fsa:sherpa-onnx:v1.13.3'
 
     implementation libs.onnxruntime.android
     implementation 'ai.djl:api:0.33.0'

@@ -11,10 +11,11 @@ import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig;
 import com.k2fsa.sherpa.onnx.OnlineStream;
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig;
 
+
 public class AsrManager {
     private static final String TAG = "ASR Manager";
-    // private static final String MODEL_DIR = "zipformer-bilingual-20230220";
-    private static final String MODEL_DIR = "zipformer-en-20230217";
+    private static final String MODEL_DIR = "zipformer-bilingual-20230220";
+    // private static final String MODEL_DIR = "zipformer-en-20230217";
 
     private OnlineRecognizer recognizer;
     private OnlineStream stream;

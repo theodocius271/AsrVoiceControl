@@ -9,7 +9,7 @@ localbroadcastmanager = "1.1.0"
 material = "1.14.0"
 activityKtx = "1.13.0"
 constraintlayout = "2.2.1"
-onnxruntimeAndroid = "latest.release"
+onnxruntimeAndroid = "1.24.3"
 tokenizersAndroid = "latest.release"
 
 [libraries]
@@ -27,4 +27,3 @@ tokenizers-android = { module = "com.github.huggingface:tokenizers-android", ver
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-
