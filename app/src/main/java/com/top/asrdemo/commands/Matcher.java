@@ -20,6 +20,15 @@ public class Matcher extends BroadcastReceiver {
     private static final String TAG = "Matcher";
     private static final float SIMILARITY_THRESHOLD = 0.7f; // mim similarity gate
 
+
+    public static final String ACTION_COMMAND_MATCHED = "com.top.asrdemo.action.COMMAND_MATCHED";
+    public static final String EXTRA_COMMAND_ID = "command_id";
+    public static final String EXTRA_COMMAND_TEXT = "command_text";
+    public static final String EXTRA_SIMILARITY = "similarity";
+    public static final String EXTRA_ORIGINAL_TEXT = "original_text";
+
+    public static final String COMMAND_GREET = "greet";
+
     private static Matcher instance;
     private Embedder embedder;
     private Context appContext;
@@ -73,32 +82,31 @@ public class Matcher extends BroadcastReceiver {
      * Load and embed all pre-defined commands
      */
     private void loadCommands() {
-        // TODO: Load commands from config file or database
-        // For now, use hardcoded examples
-        String[] commands = {
-                "Greet"
-        };
 
-        Log.i(TAG, "Pre-computing embeddings for " + commands.length + " commands...");
+        commandEmbeddings.clear();
+        commandTexts.clear();
+
+        Log.i(TAG, "Pre-computing embeddings for commands ...");
         long start = System.currentTimeMillis();
 
-        for (int i = 0; i < commands.length; i++) {
-            String cmd = commands[i];
-            float[] embedding = embedder.embed(cmd);
-
-            if (embedding != null) {
-                String cmdId = "cmd_" + i;
-                commandEmbeddings.put(cmdId, embedding);
-                commandTexts.put(cmdId, cmd);
-                Log.d(TAG, String.format("Loaded command: %s (id=%s, dim=%d)",
-                        cmd, cmdId, embedding.length));
-            } else {
-                Log.e(TAG, "Failed to embed command: " + cmd);
-            }
-        }
+        // TODO: ADD MORE COMMANDS
+        addCommand(COMMAND_GREET, "Greet");
 
         long elapsed = System.currentTimeMillis() - start;
-        Log.i(TAG, String.format("Command loading completed in %dms", elapsed));
+        Log.i(TAG, String.format("%d command(s) loaded in %dms", commandEmbeddings.size(), elapsed));
+
+    }
+
+    private void addCommand(String commandId, String commandText) {
+        float[] embedding = embedder.embed(commandText);
+        if (embedding == null) {
+            Log.e(TAG, "Failed to embed command: " + commandText);
+            return;
+        }
+
+        commandEmbeddings.put(commandId, embedding);
+        commandTexts.put(commandId, commandText);
+        Log.d(TAG, String.format("Loaded command: %s", commandText));
     }
 
     @SuppressWarnings("deprecation")
@@ -183,13 +191,13 @@ public class Matcher extends BroadcastReceiver {
 
     @SuppressWarnings("deprecation")
     private void broadcastMatchResult(String commandId, float similarity, String originalText) {
-        Intent intent = new Intent("com.top.asrdemo.action.COMMAND_MATCHED");
-        intent.putExtra("command_id", commandId);
-        intent.putExtra("similarity", similarity);
-        intent.putExtra("original_text", originalText);
+        Intent intent = new Intent(ACTION_COMMAND_MATCHED);
+        intent.putExtra(EXTRA_COMMAND_ID, commandId);
+        intent.putExtra(EXTRA_SIMILARITY, similarity);
+        intent.putExtra(EXTRA_ORIGINAL_TEXT, originalText);
 
         if (commandId != null) {
-            intent.putExtra("command_text", commandTexts.get(commandId));
+            intent.putExtra(EXTRA_COMMAND_TEXT, commandTexts.get(commandId));
         }
 
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(intent);

@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.top.asrdemo.actions.Actor;
 import com.top.asrdemo.commands.Matcher;
 import com.top.asrdemo.service.AsrService;
 
@@ -96,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     };
 
     private Matcher matcher;
+    private Actor actor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +109,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         tvSystemOutput = findViewById(R.id.tv_system_output);
         micBtn = findViewById(R.id.btn_microphone);
         micBtn.setOnClickListener(v -> toggleListening());
+
+        // init actor
+        actor = new Actor(this);
+        actor.start();
 
         // init matcher (Singleton)
         matcher = Matcher.getInstance();
@@ -124,14 +130,23 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @SuppressWarnings("deprecation")
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(asrReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(matcherReceiver);
+
         matcher.release();
+        if (actor != null) {
+            try {
+                actor.close();
+            } catch (Exception e) {
+                Log.e(TAG, "Error closing actor", e);
+            }
+        }
 
         if (isListening) {
             stopAsrService();
         }
+
+        super.onDestroy();
     }
 
     @SuppressWarnings("deprecation")
