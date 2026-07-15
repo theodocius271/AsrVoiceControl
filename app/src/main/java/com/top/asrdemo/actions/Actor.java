@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.top.asrdemo.R;
+import com.top.asrdemo.commands.Commands;
 import com.top.asrdemo.commands.Matcher;
 
 public class Actor extends BroadcastReceiver implements AutoCloseable {
@@ -72,12 +73,16 @@ public class Actor extends BroadcastReceiver implements AutoCloseable {
 
     private Action createAction(String commandId) {
         switch (commandId) {
-            case Matcher.COMMAND_GREET:
+            case Commands.COMMAND_GREET:
                 return new Greet(actionHost);
-            case Matcher.COMMAND_INCREASE_BRIGHTNESS:
+            case Commands.COMMAND_INCREASE_BRIGHTNESS:
                 return new IncreaseBrightness(activity);
-            case Matcher.COMMAND_DECREASE_BRIGHTNESS:
+            case Commands.COMMAND_DECREASE_BRIGHTNESS:
                 return new DecreaseBrightness(activity);
+            case Commands.COMMAND_INCREASE_VOLUME:
+                return new IncreaseVolume(activity);
+            case Commands.COMMAND_DECREASE_VOLUME:
+                return new DecreaseVolume(activity);
             default:
                 return null;
         }

@@ -9,7 +9,7 @@ import android.util.Log;
 public class AudioCapture {
     private static String TAG = "Audio Capture";
     private static final int SAMPLE_RATE = 16000; // 16kHz required by ASR
-    private static final float CHUNKING_TIME = 0.2f; // 200ms chunking
+    private static final float CHUNKING_TIME = 0.1f; // 100ms chunking
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 

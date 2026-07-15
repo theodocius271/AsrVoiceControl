@@ -132,6 +132,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     protected void onResume() {
         super.onResume();
 
+        if (!isListening) {
+            startListening();
+        }
+
         if (actor != null) {
             actor.retryCurrentAction();
         }

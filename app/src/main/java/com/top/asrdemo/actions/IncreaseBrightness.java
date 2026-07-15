@@ -15,6 +15,7 @@ import pub.devrel.easypermissions.EasyPermissions;
 public class IncreaseBrightness implements Action {
     private static final String TAG = "IncreaseBrightness";
     private static final int MAX_BRIGHTNESS = 255;
+    private static final int BRIGHTNESS_CHANGE = 50;
 
     private final Activity activity;
     private boolean applied;
@@ -41,11 +42,23 @@ public class IncreaseBrightness implements Action {
                 Settings.System.SCREEN_BRIGHTNESS_MODE,
                 Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
         );
+
+        int newBrightness = MAX_BRIGHTNESS;
+        try {
+            int currentBrightness = Settings.System.getInt(
+                    activity.getContentResolver(),
+                    Settings.System.SCREEN_BRIGHTNESS
+            );
+            newBrightness = Math.min(currentBrightness + BRIGHTNESS_CHANGE, MAX_BRIGHTNESS);
+        } catch (Settings.SettingNotFoundException e) {
+            Log.e(TAG, "SCREEN BRIGHTNESS settings not found", e);
+        }
+
         // Set screen brightness to max
         boolean brightnessUpdated = Settings.System.putInt(
                 activity.getContentResolver(),
                 Settings.System.SCREEN_BRIGHTNESS,
-                MAX_BRIGHTNESS
+                newBrightness
         );
 
         if (!modeUpdated || !brightnessUpdated) {

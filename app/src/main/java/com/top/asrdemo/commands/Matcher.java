@@ -11,7 +11,10 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.top.asrdemo.service.AsrService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,24 +30,41 @@ public class Matcher extends BroadcastReceiver {
     public static final String EXTRA_SIMILARITY = "similarity";
     public static final String EXTRA_ORIGINAL_TEXT = "original_text";
 
-    public static final String COMMAND_GREET = "greet";
-    public static final String COMMAND_INCREASE_BRIGHTNESS = "increase_brightness";
-    public static final String COMMAND_DECREASE_BRIGHTNESS = "decrease_brightness";
-
     private static Matcher instance;
     private Embedder embedder;
     private Context appContext;
 
     // Pre-defined commands with their embeddings
-    private Map<String, float[]> commandEmbeddings;
+    private final Map<String, List<CommandEmbedding>> commandEmbeddings;
     private Map<String, String> commandTexts; // logging debugging
+
+    private static final class CommandEmbedding {
+        private final String commandText;
+        private final float[] embedding;
+        private CommandEmbedding(String commandText, float[] embedding) {
+            this.commandText = commandText;
+            this.embedding = embedding;
+        }
+    }
+
+    private static final class MatchResult {
+        private final String commandId;
+        private final String commandText;
+        private final float similarity;
+
+        private MatchResult(String commandId, String commandText, float similarity) {
+            this.commandText = commandText;
+            this.commandId = commandId;
+            this.similarity = similarity;
+        }
+    }
 
     private volatile boolean isInitialized = false;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private Matcher() {
         embedder = new Embedder();
-        commandEmbeddings = new HashMap<>();
+        commandEmbeddings = new LinkedHashMap<>();
         commandTexts = new HashMap<>();
     }
     public static synchronized Matcher getInstance() {
@@ -84,33 +104,60 @@ public class Matcher extends BroadcastReceiver {
      * Load and embed all pre-defined commands
      */
     private void loadCommands() {
-
         commandEmbeddings.clear();
-        commandTexts.clear();
 
         Log.i(TAG, "Pre-computing embeddings for commands ...");
         long start = System.currentTimeMillis();
+        int loadedPhraseCount = 0;
 
-        // TODO: ADD MORE COMMANDS
-        addCommand(COMMAND_GREET, "Greet");
-        addCommand(COMMAND_INCREASE_BRIGHTNESS, "Increase the brightness");
-        addCommand(COMMAND_DECREASE_BRIGHTNESS, "Decrease the brightness");
+        for (Map.Entry<String, List<String>> command : Commands.all().entrySet()) {
+            String commandId = command.getKey();
+            List<CommandEmbedding> embeddings = new ArrayList<>();
+
+            for (String commandText : command.getValue()) {
+                float[] embedding = embedder.embed(commandText);
+                if (embedding == null) {
+                    Log.e(TAG, "Failed to embed command phrase: " + commandText);
+                    continue;
+                }
+
+                embeddings.add(new CommandEmbedding(commandText, embedding));
+                loadedPhraseCount++;
+                Log.d(TAG, String.format(
+                        "Loaded command phrase: %s (id=%s, dim=%d)", commandText, commandId, embedding.length
+                ));
+            }
+
+            if (embeddings.isEmpty()) {
+                Log.e(TAG, "No embeddings loaded for command: " + commandId);
+            } else {
+                commandEmbeddings.put(commandId, embeddings);
+            }
+
+        }
 
         long elapsed = System.currentTimeMillis() - start;
-        Log.i(TAG, String.format("%d command(s) loaded in %dms", commandEmbeddings.size(), elapsed));
+        Log.i(TAG, String.format("%d command phrase(s) loaded in %dms", loadedPhraseCount, elapsed));
 
     }
 
-    private void addCommand(String commandId, String commandText) {
-        float[] embedding = embedder.embed(commandText);
-        if (embedding == null) {
-            Log.e(TAG, "Failed to embed command: " + commandText);
-            return;
+    private MatchResult findBestMatch(float[] inputEmbedding) {
+        String bestCommandId = null;
+        String bestCommandText = null;
+        float bestSimilarity = 0.0f;
+
+        for (Map.Entry<String, List<CommandEmbedding>> command : commandEmbeddings.entrySet()) {
+            for (CommandEmbedding candidate : command.getValue()) {
+                float similarity = cosineSimilarity(inputEmbedding, candidate.embedding);
+                if (similarity > bestSimilarity) {
+                    bestSimilarity = similarity;
+                    bestCommandId = command.getKey();
+                    bestCommandText = candidate.commandText;
+                }
+            }
         }
 
-        commandEmbeddings.put(commandId, embedding);
-        commandTexts.put(commandId, commandText);
-        Log.d(TAG, String.format("Loaded command: %s", commandText));
+        return new MatchResult(bestCommandId, bestCommandText, bestSimilarity);
     }
 
     @SuppressWarnings("deprecation")
@@ -146,35 +193,23 @@ public class Matcher extends BroadcastReceiver {
         float[] inputEmbedding = embedder.embed(text);
         if (inputEmbedding == null) {
             Log.e(TAG, "Failed to embed input text");
-            broadcastMatchResult(null, 0.0f, text);
+            broadcastMatchResult(null, null, 0.0f, text);
             return;
         }
 
         // Find best match
-        String bestCommandId = null;
-        float bestSimilarity = 0.0f;
-
-        for (Map.Entry<String, float[]> entry : commandEmbeddings.entrySet()) {
-            float similarity = cosineSimilarity(inputEmbedding, entry.getValue());
-
-            if (similarity > bestSimilarity) {
-                bestSimilarity = similarity;
-                bestCommandId = entry.getKey();
-            }
-        }
-
+        MatchResult match = findBestMatch(inputEmbedding);
         long elapsed = System.currentTimeMillis() - start;
 
         // Check threshold
-        if (bestSimilarity >= SIMILARITY_THRESHOLD && bestCommandId != null) {
-            String matchedText = commandTexts.get(bestCommandId);
+        if (match.similarity >= SIMILARITY_THRESHOLD && match.commandId != null) {
             Log.i(TAG, String.format("Match found: '%s' -> '%s' (score=%.3f, %dms)",
-                    text, matchedText, bestSimilarity, elapsed));
-            broadcastMatchResult(bestCommandId, bestSimilarity, text);
+                    text, match.commandText, match.similarity, elapsed));
+            broadcastMatchResult(match.commandId, match.commandText, match.similarity, text);
         } else {
             Log.i(TAG, String.format("No match above threshold (best=%.3f, %dms)",
-                    bestSimilarity, elapsed));
-            broadcastMatchResult(null, bestSimilarity, text);
+                    match.similarity, elapsed));
+            broadcastMatchResult(null, match.commandText, match.similarity, text);
         }
     }
 
@@ -194,15 +229,12 @@ public class Matcher extends BroadcastReceiver {
     }
 
     @SuppressWarnings("deprecation")
-    private void broadcastMatchResult(String commandId, float similarity, String originalText) {
+    private void broadcastMatchResult(String commandId, String commandText, float similarity, String originalText) {
         Intent intent = new Intent(ACTION_COMMAND_MATCHED);
         intent.putExtra(EXTRA_COMMAND_ID, commandId);
         intent.putExtra(EXTRA_SIMILARITY, similarity);
         intent.putExtra(EXTRA_ORIGINAL_TEXT, originalText);
-
-        if (commandId != null) {
-            intent.putExtra(EXTRA_COMMAND_TEXT, commandTexts.get(commandId));
-        }
+        intent.putExtra(EXTRA_COMMAND_TEXT, commandText);
 
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(intent);
     }
@@ -221,18 +253,9 @@ public class Matcher extends BroadcastReceiver {
             return null;
         }
 
-        String bestCommandId = null;
-        float bestSimilarity = 0.0f;
+        MatchResult res = findBestMatch(inputEmbedding);
 
-        for (Map.Entry<String, float[]> entry : commandEmbeddings.entrySet()) {
-            float similarity = cosineSimilarity(inputEmbedding, entry.getValue());
-            if (similarity > bestSimilarity) {
-                bestSimilarity = similarity;
-                bestCommandId = entry.getKey();
-            }
-        }
-
-        return (bestSimilarity >= SIMILARITY_THRESHOLD) ? bestCommandId : null;
+        return (res.similarity >= SIMILARITY_THRESHOLD) ? res.commandId : null;
     }
 
     /**
