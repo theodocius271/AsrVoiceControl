@@ -55,8 +55,8 @@ public class AsrManager {
 
             // Endpoint configuration
             EndpointConfig endpointConfig = new EndpointConfig();
-            endpointConfig.setRule1(new EndpointRule(false, 3.2f, 0.0f)); // 2.4s trailing silence
-            endpointConfig.setRule2(new EndpointRule(true, 2.4f, 0.0f)); // 1.4s with speech
+            endpointConfig.setRule1(new EndpointRule(false, 1.0f, 0.0f)); // 1.0s trailing silence
+            endpointConfig.setRule2(new EndpointRule(true, 0.9f, 0.0f)); // 0.9s with speech
             endpointConfig.setRule3(new EndpointRule(false, 0.0f, 20.0f)); // max 20s utterance
             recognizerConfig.setEndpointConfig(endpointConfig);
 

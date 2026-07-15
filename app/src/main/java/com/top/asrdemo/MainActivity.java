@@ -89,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     Log.i(TAG, output);
                 } else {
                     // No match
+                    actor.closeCurrentAction();
                     setSystemOutput("No matching command");
                     Log.i(TAG, "No command matched for: " + originalText);
                 }
@@ -125,6 +126,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
         registerAsrReceiver();
         registerMatcherReceiver();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (actor != null) {
+            actor.retryCurrentAction();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -199,6 +209,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         micBtn.setBackgroundResource(R.drawable.circular_button_background_paused);
         stopAsrService();
         clearDisplays();
+        if (actor != null) {
+            actor.closeCurrentAction();
+        }
         Log.i(TAG, "Stopped Listening");
     }
 

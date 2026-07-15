@@ -28,6 +28,8 @@ public class Matcher extends BroadcastReceiver {
     public static final String EXTRA_ORIGINAL_TEXT = "original_text";
 
     public static final String COMMAND_GREET = "greet";
+    public static final String COMMAND_INCREASE_BRIGHTNESS = "increase_brightness";
+    public static final String COMMAND_DECREASE_BRIGHTNESS = "decrease_brightness";
 
     private static Matcher instance;
     private Embedder embedder;
@@ -91,6 +93,8 @@ public class Matcher extends BroadcastReceiver {
 
         // TODO: ADD MORE COMMANDS
         addCommand(COMMAND_GREET, "Greet");
+        addCommand(COMMAND_INCREASE_BRIGHTNESS, "Increase the brightness");
+        addCommand(COMMAND_DECREASE_BRIGHTNESS, "Decrease the brightness");
 
         long elapsed = System.currentTimeMillis() - start;
         Log.i(TAG, String.format("%d command(s) loaded in %dms", commandEmbeddings.size(), elapsed));

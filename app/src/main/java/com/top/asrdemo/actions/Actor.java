@@ -19,11 +19,14 @@ public class Actor extends BroadcastReceiver implements AutoCloseable {
 
     @SuppressWarnings("deprecation") private final LocalBroadcastManager broadcastManager;
     private final ViewGroup actionHost;
+    private final Activity activity;
 
     private Action currentAction;
     private boolean registered;
 
+    @SuppressWarnings("deprecation")
     public Actor(Activity activity) {
+        this.activity = activity;
         broadcastManager = LocalBroadcastManager.getInstance(activity);
         actionHost = activity.findViewById(R.id.upper_section);
     }
@@ -71,12 +74,16 @@ public class Actor extends BroadcastReceiver implements AutoCloseable {
         switch (commandId) {
             case Matcher.COMMAND_GREET:
                 return new Greet(actionHost);
+            case Matcher.COMMAND_INCREASE_BRIGHTNESS:
+                return new IncreaseBrightness(activity);
+            case Matcher.COMMAND_DECREASE_BRIGHTNESS:
+                return new DecreaseBrightness(activity);
             default:
                 return null;
         }
     }
 
-    private void closeCurrentAction() {
+    public void closeCurrentAction() {
         if (currentAction == null) {
             return;
         }
@@ -90,7 +97,18 @@ public class Actor extends BroadcastReceiver implements AutoCloseable {
         }
     }
 
+    public void retryCurrentAction() {
+        if (currentAction == null) {
+            return ;
+        }
 
+        try {
+            currentAction.run();
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Filed to retry current action", e);
+            closeCurrentAction();
+        }
+    }
 
     @Override
     public void close() throws Exception {
