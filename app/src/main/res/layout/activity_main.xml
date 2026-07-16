@@ -8,41 +8,26 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="4"
-        android:orientation="vertical"
-        android:id="@+id/upper_section"
-        android:gravity="center"
-        android:padding="16dp" >
+        android:id="@+id/upper_section" >
 
-        <TextView
+        <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/tv_use_input"
-            android:padding="16dp"
-            android:textSize="24sp"
-            android:textColor="#000000"
-            android:textStyle="italic"
-            android:gravity="center"
-            android:background="@drawable/glass_background"
-            android:visibility="gone"
-            android:layout_marginBottom="16dp" />
+            android:layout_height="match_parent"
+            android:id="@+id/chat_messages"
+            android:clipToPadding="false"
+            android:overScrollMode="ifContentScrolls"
+            android:paddingStart="12dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="16dp"
+            android:scrollbars="vertical" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/tv_system_output"
-            android:padding="16dp"
-            android:textSize="24sp"
-            android:textColor="#000000"
-            android:textStyle="italic"
-            android:gravity="center"
-            android:background="@drawable/glass_background"
-            android:visibility="gone" />
 
-    </LinearLayout>
+    </FrameLayout>
 
     <FrameLayout
         android:layout_width="match_parent"

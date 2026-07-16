@@ -13,23 +13,24 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.top.asrdemo.R;
 import com.top.asrdemo.commands.Commands;
 import com.top.asrdemo.commands.Matcher;
+import com.top.asrdemo.utils.ChatboxManager;
 
 public class Actor extends BroadcastReceiver implements AutoCloseable {
 
     private static final String TAG = "Actor";
 
     @SuppressWarnings("deprecation") private final LocalBroadcastManager broadcastManager;
-    private final ViewGroup actionHost;
+    private final ChatboxManager chatboxManager;
     private final Activity activity;
 
     private Action currentAction;
     private boolean registered;
 
     @SuppressWarnings("deprecation")
-    public Actor(Activity activity) {
+    public Actor(Activity activity, ChatboxManager chatboxManager) {
         this.activity = activity;
         broadcastManager = LocalBroadcastManager.getInstance(activity);
-        actionHost = activity.findViewById(R.id.upper_section);
+        this.chatboxManager = chatboxManager;
     }
 
     public void start() {
@@ -74,11 +75,11 @@ public class Actor extends BroadcastReceiver implements AutoCloseable {
     private Action createAction(String commandId) {
         switch (commandId) {
             case Commands.COMMAND_GREET:
-                return new Greet(actionHost);
+                return new Greet(chatboxManager);
             case Commands.COMMAND_INCREASE_BRIGHTNESS:
-                return new IncreaseBrightness(activity);
+                return new IncreaseBrightness(activity, chatboxManager);
             case Commands.COMMAND_DECREASE_BRIGHTNESS:
-                return new DecreaseBrightness(activity);
+                return new DecreaseBrightness(activity, chatboxManager);
             case Commands.COMMAND_INCREASE_VOLUME:
                 return new IncreaseVolume(activity);
             case Commands.COMMAND_DECREASE_VOLUME:

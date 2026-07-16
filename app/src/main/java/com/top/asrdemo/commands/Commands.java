@@ -19,7 +19,7 @@ public class Commands {
     public static final String TEXT_SAY_HELLO = "Say hello";
     public static final String TEXT_HELLO = "Hello";
     // command IncreaseBrightness
-    public static final String TEXT_INCREASE_BRIGHTNESS = "Increase the brightness";
+    public static final String TEXT_INCREASE_BRIGHTNESS = "INCREASE THE BRIGHTNESS";
     public static final String TEXT_TURN_UP_BRIGHTNESS = "Turn up the brightness";
     public static final String TEXT_MAKE_SCREEN_BRIGHTER = "Make the screen brighter";
     // command DecreaseBrightness

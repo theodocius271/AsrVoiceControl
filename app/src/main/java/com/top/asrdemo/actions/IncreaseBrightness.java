@@ -7,8 +7,10 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.top.asrdemo.utils.BrightnessPermission;
+import com.top.asrdemo.utils.ChatboxManager;
 
 import java.util.List;
+import java.util.Locale;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -18,11 +20,13 @@ public class IncreaseBrightness implements Action {
     private static final int BRIGHTNESS_CHANGE = 50;
 
     private final Activity activity;
+    private final ChatboxManager chatboxManager;
     private boolean applied;
 
-    public IncreaseBrightness(Activity activity) {
+    public IncreaseBrightness(Activity activity, ChatboxManager chatboxManager) {
         this.activity = activity;
         BrightnessPermission.requestIfNeeded(activity);
+        this.chatboxManager = chatboxManager;
     }
 
     @Override
@@ -60,7 +64,7 @@ public class IncreaseBrightness implements Action {
                 Settings.System.SCREEN_BRIGHTNESS,
                 newBrightness
         );
-
+        chatboxManager.addSystemText(String.format(Locale.US, "Screen brightness set to %d.", newBrightness));
         if (!modeUpdated || !brightnessUpdated) {
             throw new IllegalStateException("Failed to write system brightness");
         }

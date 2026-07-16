@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,8 +14,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +26,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.top.asrdemo.actions.Actor;
 import com.top.asrdemo.commands.Matcher;
 import com.top.asrdemo.service.AsrService;
+import com.top.asrdemo.utils.ChatboxManager;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -36,9 +36,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private static final int RC_AUDIO_PERMISSIONS = 1001;
 
     // UI
-    private TextView tvUserInput;
-    private TextView tvSystemOutput;
     private ImageButton micBtn;
+    private ChatboxManager chatboxManager;
 
     // State
     private boolean isListening = false;
@@ -52,16 +51,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             switch (action) {
                 case AsrService.ACTION_PARTIAL_RESULT:
                     String partialText = intent.getStringExtra(AsrService.EXTRA_TEXT);
-                    setUserInput(partialText);
+                    chatboxManager.showPartialUserText(partialText);
                     break;
                 case AsrService.ACTION_FINAL_RESULT:
                     String finalText = intent.getStringExtra(AsrService.EXTRA_TEXT);
-                    setUserInput(finalText);
-                    // TODO: Set system output
+                    chatboxManager.commitUserText(finalText);
                     break;
                 case AsrService.ACTION_ERROR:
                     String error = intent.getStringExtra(AsrService.EXTRA_ERROR);
-                    Toast.makeText(MainActivity.this, "ASR Error: " + error, Toast.LENGTH_SHORT).show();
+                    chatboxManager.addSystemText("ASR error: " + error);
                     stopListening();
                     break;
 
@@ -72,27 +70,24 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private BroadcastReceiver matcherReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action == null) return;
+            if (!Matcher.ACTION_COMMAND_MATCHED.equals(intent.getAction())) {
+                return;
+            }
 
-            if ("com.top.asrdemo.action.COMMAND_MATCHED".equals(action)) {
-                String commandId = intent.getStringExtra("command_id");
-                String commandText = intent.getStringExtra("command_text");
-                float similarity = intent.getFloatExtra("similarity", 0.0f);
-                String originalText = intent.getStringExtra("original_text");
+            String commandId = intent.getStringExtra(Matcher.EXTRA_COMMAND_ID);
+            String commandText = intent.getStringExtra(Matcher.EXTRA_COMMAND_TEXT);
+            float similarity = intent.getFloatExtra(Matcher.EXTRA_SIMILARITY, 0.0f);
+            String originalText = intent.getStringExtra(Matcher.EXTRA_ORIGINAL_TEXT);
 
-                if (commandId != null) {
-                    // Match found
-                    @SuppressLint("DefaultLocale") String output = String.format("Matched: %s (%.2f%%)",
-                            commandText, similarity * 100);
-                    setSystemOutput(output);
-                    Log.i(TAG, output);
-                } else {
-                    // No match
-                    actor.closeCurrentAction();
-                    setSystemOutput("No matching command");
-                    Log.i(TAG, "No command matched for: " + originalText);
-                }
+            if (commandId != null) {
+                String label = commandText != null ? commandText : commandId;
+                String output = String.format(Locale.US, "Matched Result: %s at %.2f%%", label, similarity * 100f);
+                chatboxManager.addSystemText(output);
+                Log.i(TAG, output);
+            } else {
+                actor.closeCurrentAction();
+                chatboxManager.addSystemText("No matching command.\n Supported: Increase / Decrease Brightness, Increase / Decrease Volume");
+                Log.i(TAG, "No matched for: " + originalText);
             }
         }
     };
@@ -106,13 +101,13 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         setContentView(R.layout.activity_main);
 
         // init Views
-        tvUserInput = findViewById(R.id.tv_use_input);
-        tvSystemOutput = findViewById(R.id.tv_system_output);
+        chatboxManager = new ChatboxManager(findViewById(R.id.chat_messages));
+
         micBtn = findViewById(R.id.btn_microphone);
         micBtn.setOnClickListener(v -> toggleListening());
 
         // init actor
-        actor = new Actor(this);
+        actor = new Actor(this, chatboxManager);
         actor.start();
 
         // init matcher (Singleton)
@@ -156,6 +151,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
         }
 
+        if (chatboxManager != null) {
+            try {
+                chatboxManager.close();
+            } catch (Exception e) {
+                Log.e(TAG, "Error closing chatboxManager", e);
+            }
+        }
+
         if (isListening) {
             stopAsrService();
         }
@@ -195,7 +198,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             // granted
             isListening = true;
             micBtn.setBackgroundResource(R.drawable.circular_button_background_started);
-            clearDisplays();
             startAsrService();
             Log.i(TAG, "Started listening");
         } else {
@@ -212,7 +214,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         isListening = false;
         micBtn.setBackgroundResource(R.drawable.circular_button_background_paused);
         stopAsrService();
-        clearDisplays();
         if (actor != null) {
             actor.closeCurrentAction();
         }
@@ -251,39 +252,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 .alpha(1f)
                 .setDuration(300)
                 .setListener(null);
-    }
-
-    @SuppressLint("SetTextI18n")
-    private void setUserInput(String text) {
-        runOnUiThread(() -> {
-            if (text == null || text.trim().isEmpty()) {
-                tvUserInput.setVisibility(View.GONE);
-                tvUserInput.setText("");
-            } else {
-                tvUserInput.setText("User: " + text);
-                tvUserInput.setVisibility(View.VISIBLE);
-                // showTextViewWithAnimation(tvUserInput, "User: " + text);
-            }
-        });
-    }
-
-    @SuppressLint("SetTextI18n")
-    private void setSystemOutput(String text) {
-        runOnUiThread(() -> {
-            if (text == null || text.trim().isEmpty()) {
-                tvSystemOutput.setVisibility(View.GONE);
-                tvSystemOutput.setText("");
-            } else {
-//                tvSystemOutput.setText("User: " + text);
-//                tvSystemOutput.setVisibility(View.VISIBLE);
-                showTextViewWithAnimation(tvSystemOutput, "System: " + text);
-            }
-        });
-    }
-
-    private void clearDisplays() {
-        setUserInput(null);
-        setSystemOutput(null);
     }
 
     // EasyPermission callbacks
