@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 
 public class Matcher extends BroadcastReceiver {
     private static final String TAG = "Matcher";
-    private static final float SIMILARITY_THRESHOLD = 0.7f; // mim similarity gate
+    private static final float SIMILARITY_THRESHOLD = 0.4f; // mim similarity gate
 
 
     public static final String ACTION_COMMAND_MATCHED = "com.top.asrdemo.action.COMMAND_MATCHED";

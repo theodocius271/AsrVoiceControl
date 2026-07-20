@@ -53,6 +53,10 @@ public class IncreaseBrightness implements Action {
                     activity.getContentResolver(),
                     Settings.System.SCREEN_BRIGHTNESS
             );
+            if (currentBrightness >= MAX_BRIGHTNESS) {
+                chatboxManager.addSystemText("亮度已经是最高了");
+                return;
+            }
             newBrightness = Math.min(currentBrightness + BRIGHTNESS_CHANGE, MAX_BRIGHTNESS);
         } catch (Settings.SettingNotFoundException e) {
             Log.e(TAG, "SCREEN BRIGHTNESS settings not found", e);
@@ -64,12 +68,13 @@ public class IncreaseBrightness implements Action {
                 Settings.System.SCREEN_BRIGHTNESS,
                 newBrightness
         );
-        chatboxManager.addSystemText(String.format(Locale.US, "Screen brightness set to %d.", newBrightness));
+        chatboxManager.addSystemText(String.format(Locale.US, "已为您调高屏幕亮度, 当前亮度%d%%", (int) (newBrightness / 2.55)));
+
         if (!modeUpdated || !brightnessUpdated) {
             throw new IllegalStateException("Failed to write system brightness");
         }
         applied = true;
-        Log.i(TAG, "System brightness set to maximum");
+        Log.i(TAG, "System brightness increased");
     }
 
     @Override

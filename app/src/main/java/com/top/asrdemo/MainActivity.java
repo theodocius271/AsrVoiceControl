@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.top.asrdemo.actions.Actor;
+import com.top.asrdemo.commands.Commands;
 import com.top.asrdemo.commands.Matcher;
 import com.top.asrdemo.service.AsrService;
 import com.top.asrdemo.utils.ChatboxManager;
@@ -82,11 +83,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             if (commandId != null) {
                 String label = commandText != null ? commandText : commandId;
                 String output = String.format(Locale.US, "Matched Result: %s at %.2f%%", label, similarity * 100f);
-                chatboxManager.addSystemText(output);
+                // chatboxManager.addSystemText(output);
                 Log.i(TAG, output);
             } else {
                 actor.closeCurrentAction();
-                chatboxManager.addSystemText("No matching command.\n Supported: Increase / Decrease Brightness, Increase / Decrease Volume");
+                chatboxManager.addSystemText(Commands.NO_MATCHING_COMMAND);
                 Log.i(TAG, "No matched for: " + originalText);
             }
         }

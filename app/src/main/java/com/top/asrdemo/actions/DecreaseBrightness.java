@@ -47,6 +47,10 @@ public class DecreaseBrightness implements Action {
                     activity.getContentResolver(),
                     Settings.System.SCREEN_BRIGHTNESS
             );
+            if (currentBrightness <= MIN_BRIGHTNESS) {
+                chatboxManager.addSystemText("亮度已经是最低了");
+                return;
+            }
             newBrightness = Math.max(currentBrightness - BRIGHTNESS_CHANGE, MIN_BRIGHTNESS);
         } catch (Settings.SettingNotFoundException e) {
             Log.e(TAG, "SCREEN BRIGHTNESS settings not found", e);
@@ -58,7 +62,8 @@ public class DecreaseBrightness implements Action {
                 Settings.System.SCREEN_BRIGHTNESS,
                 newBrightness
         );
-        chatboxManager.addSystemText(String.format(Locale.US, "Screen brightness decreased to %d.", newBrightness));
+        chatboxManager.addSystemText(String.format(Locale.US, "已为您调小亮度, 当前屏幕亮度%d%%", (int) (newBrightness / 2.55)));
+
         if (!modeUpdated || !brightnessUpdated) {
             throw new IllegalStateException("Failed to write minimum sys brightness");
         }

@@ -81,9 +81,11 @@ public class Actor extends BroadcastReceiver implements AutoCloseable {
             case Commands.COMMAND_DECREASE_BRIGHTNESS:
                 return new DecreaseBrightness(activity, chatboxManager);
             case Commands.COMMAND_INCREASE_VOLUME:
-                return new IncreaseVolume(activity);
+                return new IncreaseVolume(activity, chatboxManager);
             case Commands.COMMAND_DECREASE_VOLUME:
-                return new DecreaseVolume(activity);
+                return new DecreaseVolume(activity, chatboxManager);
+            case Commands.COMMAND_SHOW_VERSION:
+                return new ShowVersion(activity, chatboxManager);
             default:
                 return null;
         }
